@@ -22,11 +22,7 @@ futures-sink = "0.3"
 tokio = { version = "1", features = ["full"] }
 env_logger = "0.9"
 criterion = "0.4"
-pprof = { version = "0.10", features = ["flamegraph"] } 
+pprof = { version = "0.10", features = ["flamegraph"] }
 
 [profile.release]
 debug = true
-
-#[[bench]]
-#name = "smol"
-#harness = false

@@ -184,6 +184,7 @@ impl<T: TokioConn> Future for MuxTimer<T> {
             ready!(self.interval.poll_tick(cx));
             self.interval.reset();
 
+            let mut ping_processed = false;
             let ts = get_timestamp_slow();
             self.timestamp.store(ts, Ordering::SeqCst);
             let mut state = self.state.lock();
@@ -191,6 +192,7 @@ impl<T: TokioConn> Future for MuxTimer<T> {
             // Ping
             if let Some(keep_alive_interval) = self.keep_alive_interval {
                 if ts > self.last_ping + keep_alive_interval {
+                    ping_processed = true;
                     state.enqueue_frame_global(MuxFrame::new(MuxCommand::Nop, 0, Bytes::new()));
                     state.wake_tx();
                 }
@@ -214,6 +216,12 @@ impl<T: TokioConn> Future for MuxTimer<T> {
                     state.process_finish(stream_id);
                     state.send_finish(stream_id);
                 }
+            }
+
+            std::mem::drop(state);
+            // update ping interval
+            if ping_processed {
+                self.last_ping = ts;
             }
         }
     }
